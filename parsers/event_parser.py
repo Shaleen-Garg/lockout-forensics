@@ -2,7 +2,7 @@ from Evtx.Evtx import Evtx
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Optional
-from collections import Counter
+
 ns = {"e": "http://schemas.microsoft.com/win/2004/08/events/event"}
 
 
@@ -55,24 +55,6 @@ def parse_event(root)->Optional[WindowsEvent]:
     )
 
 
-interesting_ids = {"4624", "4625", "4720", "4740"}
-events: list[WindowsEvent]=[]
-
-
-with Evtx(r"tests\sample_logs\lockout_test.evtx") as log:
-    for total, record in enumerate(log.records(), start=1):
-        root = ET.fromstring(record.xml())
-        event = parse_event(root)
-        if event:
-            events.append(event)
-
-print(f"Total records scanned: {total}")
-print(f"Matching events found: {len(events)}")
-
-id_counts = Counter(e.event_id for e in events)
-print("Breakdown:", id_counts)
-for e in events[:5]:
-    print(e)
 
 
     
