@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, r"C:\lockout-forensics")
 from parsers.event_parser import WindowsEvent
 from datetime import datetime
 from collections import defaultdict
@@ -57,3 +59,23 @@ def correlate(events: list[WindowsEvent]) -> list[LockoutEvent]:
         )
     results.append(lockout_event)
     return results
+
+if __name__ == "__main__":
+    from parsers.event_parser import parse_event, WindowsEvent
+    from Evtx.Evtx import Evtx
+    import xml.etree.ElementTree as ET
+
+    events = []
+    with Evtx(r"C:\lockout-forensics\tests\sample_logs\lockout_test.evtx") as log:
+        for record in log.records():
+            root = ET.fromstring(record.xml())
+            event = parse_event(root)
+            if event:
+                events.append(event)
+
+    results = correlate(events)
+    for r in results:
+        print(f"Account: {r.account}")
+        print(f"Lockout time: {r.lockout_time}")
+        print(f"Failed attempts: {len(r.failed_attempts)}")
+        print(f"Source machines: {r.source_machines}")
