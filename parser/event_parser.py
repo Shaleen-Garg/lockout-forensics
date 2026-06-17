@@ -59,7 +59,7 @@ interesting_ids = {"4624", "4625", "4720", "4740"}
 events: list[WindowsEvent]=[]
 
 
-with Evtx(r"tests/sample_logs/logs1.evtx") as log:
+with Evtx(r"tests\sample_logs\lockout_test.evtx") as log:
     for total, record in enumerate(log.records(), start=1):
         root = ET.fromstring(record.xml())
         event = parse_event(root)
