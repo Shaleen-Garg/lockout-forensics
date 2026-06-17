@@ -1,3 +1,6 @@
+from collections import Counter
+from Evtx.Evtx import Evtx
+import xml.etree.ElementTree as ET
 from Evtx.Evtx import Evtx
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -56,8 +59,8 @@ def parse_event(root)->Optional[WindowsEvent]:
 
 
 interesting_ids = {"4624", "4625", "4720", "4740"}
-events: list[WindowsEvent]=[]
-
+events = []
+total = 0
 
 with Evtx(r"tests/sample_logs/logs1.evtx") as log:
     for total, record in enumerate(log.records(), start=1):
@@ -71,8 +74,6 @@ print(f"Matching events found: {len(events)}")
 
 id_counts = Counter(e.event_id for e in events)
 print("Breakdown:", id_counts)
+
 for e in events[:5]:
     print(e)
-
-
-    
