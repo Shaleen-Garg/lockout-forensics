@@ -33,7 +33,6 @@ class LockoutEvent:
 
 
 def correlate(events: list[WindowsEvent]) -> list[LockoutEvent]:
-    # Separate 4740s and 4625s
     lockouts = [e for e in events if e.event_id == "4740"]
     failures = [e for e in events if e.event_id == "4625"]
 
