@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lockout Forensics Report — {{ lockout.account }}</title>
+    <title>Lockout Forensics Report — testlockout</title>
     <style>
         body { font-family: monospace; background: #0d1117; color: #c9d1d9; padding: 40px; }
         .container { max-width: 900px; margin: auto; }
@@ -27,21 +27,21 @@
 <div class="container">
 
     <h1>Lockout Forensics Report</h1>
-    <p class="meta">Generated: {{ generated_at }}</p>
+    <p class="meta">Generated: 2026-06-17 17:22:49</p>
 
     <div class="section">
         <h2>Target</h2>
-        <p class="meta">Account: <strong>{{ lockout.account }}</strong></p>
-        <p class="meta">Lockout Time: <strong>{{ lockout.lockout_time }}</strong></p>
-        <p class="meta">Locked Out On: <strong>{{ lockout.lockout_computer }}</strong></p>
-        <p class="meta">Source Machine(s): <strong>{{ source_machines }}</strong></p>
+        <p class="meta">Account: <strong>testlockout</strong></p>
+        <p class="meta">Lockout Time: <strong>2026-06-17 05:43:51</strong></p>
+        <p class="meta">Locked Out On: <strong>SYSWIN141</strong></p>
+        <p class="meta">Source Machine(s): <strong>SYSWIN141</strong></p>
     </div>
 
     <div class="section">
         <h2>Verdict</h2>
-        <div class="verdict-{{ result.verdict }}">{{ result.verdict }}</div>
+        <div class="verdict-ROUTINE">ROUTINE</div>
         <br><br>
-        <span class="risk-score">{{ result.risk_score }}/10</span>
+        <span class="risk-score">2/10</span>
         <span style="color:#8b949e; font-size:13px; margin-left:10px;">Risk Score</span>
     </div>
 
@@ -49,41 +49,69 @@
         <h2>Possible Causes</h2>
         <table>
             <tr><th>Cause</th><th>Confidence</th><th></th></tr>
-            {% for cause, confidence in result.possible_causes %}
+            
             <tr>
-                <td>{{ cause }}</td>
-                <td>{{ confidence }}%</td>
+                <td>Stale network credentials</td>
+                <td>62%</td>
                 <td style="width:200px">
-                    <div class="bar-bg"><div class="bar-fill" style="width:{{ confidence }}%"></div></div>
+                    <div class="bar-bg"><div class="bar-fill" style="width:62%"></div></div>
                 </td>
             </tr>
-            {% endfor %}
+            
+            <tr>
+                <td>Cached credentials</td>
+                <td>38%</td>
+                <td style="width:200px">
+                    <div class="bar-bg"><div class="bar-fill" style="width:38%"></div></div>
+                </td>
+            </tr>
+            
         </table>
     </div>
 
     <div class="section">
         <h2>Evidence</h2>
-        {% for item in result.evidence %}
-        <div class="evidence-item">{{ item }}</div>
-        {% endfor %}
+        
+        <div class="evidence-item">✓ 3 failed attempts</div>
+        
+        <div class="evidence-item">✓ 1 source machine(s): SYSWIN141</div>
+        
+        <div class="evidence-item">✓ Logon Type 3 (Network)</div>
+        
+        <div class="evidence-item">⚠ Lockout occurred outside business hours (05:43)</div>
+        
     </div>
 
     <div class="section">
         <h2>Timeline</h2>
         <table>
             <tr><th>Time</th><th>Event</th><th>Source Machine</th><th>Logon Type</th></tr>
-            {% for attempt in lockout.failed_attempts %}
+            
             <tr>
-                <td>{{ attempt.timestamp }}</td>
+                <td>2026-06-17 05:35:56.068802+00:00</td>
                 <td>4625 — Failed Logon</td>
-                <td>{{ attempt.source_machine or "—" }}</td>
-                <td>{{ attempt.logon_type or "—" }}</td>
+                <td>SYSWIN141</td>
+                <td>3</td>
             </tr>
-            {% endfor %}
+            
+            <tr>
+                <td>2026-06-17 05:42:52.829271+00:00</td>
+                <td>4625 — Failed Logon</td>
+                <td>SYSWIN141</td>
+                <td>3</td>
+            </tr>
+            
+            <tr>
+                <td>2026-06-17 05:43:51.838171+00:00</td>
+                <td>4625 — Failed Logon</td>
+                <td>SYSWIN141</td>
+                <td>3</td>
+            </tr>
+            
             <tr style="color:#f85149">
-                <td>{{ lockout.lockout_time }}</td>
+                <td>2026-06-17 05:43:51</td>
                 <td>4740 — Account Locked Out</td>
-                <td>{{ lockout.lockout_computer }}</td>
+                <td>SYSWIN141</td>
                 <td>—</td>
             </tr>
         </table>
@@ -91,16 +119,20 @@
 
     <div class="section">
         <h2>Logon Type Interpretation</h2>
-        {% for lt, info in result.logon_type_interpretation.items() %}
-        <p class="meta">Type {{ lt }} — <strong>{{ info.meaning }}</strong>: {{ info.common_cause }}</p>
-        {% endfor %}
+        
+        <p class="meta">Type 3 — <strong>Network</strong>: Mapped drive, file share, or net use command</p>
+        
     </div>
 
     <div class="section">
         <h2>Recommended Actions</h2>
-        {% for rec in result.recommendations %}
-        <div class="rec-item">{{ loop.index }}. {{ rec }}</div>
-        {% endfor %}
+        
+        <div class="rec-item">1. Check Windows Credential Manager</div>
+        
+        <div class="rec-item">2. Clear saved network passwords</div>
+        
+        <div class="rec-item">3. Re-map network drives with correct credentials</div>
+        
     </div>
 
 </div>
