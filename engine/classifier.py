@@ -1,5 +1,7 @@
 import sys
-sys.path.insert(0, r"C:\lockout-forensics")
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from engine.correlator import LockoutEvent
 from dataclasses import dataclass, field
@@ -13,6 +15,9 @@ class ClassificationResult:
     verdict: str
     recommendations: list[str]
     logon_type_interpretation: dict
+    incident_summary: str
+    likely_owner: str
+    urgency: str
 
 def infer_causes(lockout: LockoutEvent)->list[tuple[str, int]]:
     causes = {
@@ -53,6 +58,12 @@ def infer_causes(lockout: LockoutEvent)->list[tuple[str, int]]:
         causes["Manual brute force"]+=35
         causes["Credential stuffing"]+=30
 
+    if any(e.event_id == "4771" for e in lockout.credential_events):
+        causes["Cached credentials"] += 20
+        causes["Manual brute force"] += 15
+    if any(e.event_id == "4776" for e in lockout.credential_events):
+        causes["Stale network credentials"] += 20
+
     total=sum(causes.values())
     if total==0:
         return [("Unknown",0)]
@@ -66,6 +77,9 @@ def calculate_risk(lockout: LockoutEvent) -> tuple[int, str]:
         score += 3
 
     if len(lockout.failed_attempts) > 10:
+        score += 2
+
+    if len(lockout.credential_events) > 10:
         score += 2
 
     
@@ -85,6 +99,38 @@ def calculate_risk(lockout: LockoutEvent) -> tuple[int, str]:
         verdict = "CRITICAL"
 
     return score, verdict
+
+
+def determine_urgency(verdict: str) -> str:
+    if verdict == "CRITICAL":
+        return "Immediate security review"
+    if verdict == "SUSPICIOUS":
+        return "Investigate today"
+    return "Routine IT remediation"
+
+
+def determine_likely_owner(lockout: LockoutEvent, causes: list[tuple[str, int]]) -> str:
+    if not causes:
+        return "Helpdesk or identity admin"
+    top_cause = causes[0][0]
+    if top_cause in {"Credential stuffing", "Manual brute force"}:
+        return "Security team"
+    if top_cause in {"Service misconfiguration", "Scheduled task (stale password)"}:
+        return "Windows/server admin"
+    return "Helpdesk or endpoint support"
+
+
+def build_incident_summary(lockout: LockoutEvent, causes: list[tuple[str, int]], verdict: str, risk_score: int) -> str:
+    top_cause, confidence = causes[0] if causes else ("Unknown", 0)
+    source = ", ".join(lockout.source_machines) or "an unknown source"
+    window = lockout.failure_window_minutes
+    window_text = f" over about {window} minute(s)" if window else ""
+    return (
+        f"{lockout.account} was locked out on {lockout.lockout_computer} after "
+        f"{len(lockout.failed_attempts)} failed authentication attempt(s){window_text} "
+        f"from {source}. The strongest explanation is {top_cause} ({confidence}% confidence). "
+        f"Current verdict: {verdict}, risk {risk_score}/10."
+    )
 
 
 LOGON_TYPE_MAP = {
@@ -124,16 +170,19 @@ def get_recommendations(causes: list[tuple[str, int]]) -> list[str]:
 
 def build_evidence(lockout: LockoutEvent) -> list[str]:
     evidence = []
-    evidence.append(f"✓ {len(lockout.failed_attempts)} failed attempts")
-    evidence.append(f"✓ {len(lockout.source_machines)} source machine(s): {', '.join(lockout.source_machines) or 'unknown'}")
+    evidence.append(f"[OK] {len(lockout.failed_attempts)} failed attempts")
+    if lockout.credential_events:
+        event_ids = sorted({e.event_id for e in lockout.credential_events})
+        evidence.append(f"[OK] Related credential validation events: {', '.join(event_ids)}")
+    evidence.append(f"[OK] {len(lockout.source_machines)} source machine(s): {', '.join(lockout.source_machines) or 'unknown'}")
     for lt in lockout.logon_types:
         if lt in LOGON_TYPE_MAP:
-            evidence.append(f"✓ Logon Type {lt} ({LOGON_TYPE_MAP[lt][0]})")
+            evidence.append(f"[OK] Logon Type {lt} ({LOGON_TYPE_MAP[lt][0]})")
     hour = lockout.lockout_time.hour
     if hour < 8 or hour >= 18:
-        evidence.append(f"⚠ Lockout occurred outside business hours ({lockout.lockout_time.strftime('%H:%M')})")
+        evidence.append(f"[WARN] Lockout occurred outside business hours ({lockout.lockout_time.strftime('%H:%M')})")
     else:
-        evidence.append(f"✓ Lockout within business hours ({lockout.lockout_time.strftime('%H:%M')})")
+        evidence.append(f"[OK] Lockout within business hours ({lockout.lockout_time.strftime('%H:%M')})")
     return evidence
 
 
@@ -143,6 +192,9 @@ def classify(lockout: LockoutEvent) -> ClassificationResult:
     evidence = build_evidence(lockout)
     recommendations = get_recommendations(causes)
     logon_interp = interpret_logon_types(lockout.logon_types)
+    incident_summary = build_incident_summary(lockout, causes, verdict, score)
+    likely_owner = determine_likely_owner(lockout, causes)
+    urgency = determine_urgency(verdict)
 
     return ClassificationResult(
         possible_causes=causes,
@@ -151,7 +203,22 @@ def classify(lockout: LockoutEvent) -> ClassificationResult:
         verdict=verdict,
         recommendations=recommendations,
         logon_type_interpretation=logon_interp,
+        incident_summary=incident_summary,
+        likely_owner=likely_owner,
+        urgency=urgency,
     )
+
+
+def refresh_context(lockout: LockoutEvent, result: ClassificationResult) -> ClassificationResult:
+    result.incident_summary = build_incident_summary(
+        lockout,
+        result.possible_causes,
+        result.verdict,
+        result.risk_score,
+    )
+    result.likely_owner = determine_likely_owner(lockout, result.possible_causes)
+    result.urgency = determine_urgency(result.verdict)
+    return result
 
 
 if __name__ == "__main__":

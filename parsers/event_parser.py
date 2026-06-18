@@ -1,9 +1,8 @@
-from Evtx.Evtx import Evtx
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Optional
 
 ns = {"e": "http://schemas.microsoft.com/win/2004/08/events/event"}
+INTERESTING_EVENT_IDS = {"4625", "4740", "4771", "4776"}
 
 
 @dataclass
@@ -38,19 +37,31 @@ def get_event_data(root):
 
 def parse_event(root)->Optional[WindowsEvent]:
     event_id, timestamp, computer = get_sys_data(root)
-    if event_id not in {"4624","4625","4720","4740"}:
+    if event_id not in INTERESTING_EVENT_IDS:
         return None
     data=get_event_data(root)
+    account_name = (
+        data.get("TargetUserName")
+        or data.get("SubjectUserName")
+        or data.get("AccountName")
+        or data.get("TargetUser")
+    )
+    source_machine = (
+        data.get("WorkstationName")
+        or data.get("Workstation")
+        or data.get("CallerComputerName")
+        or data.get("ClientAddress")
+    )
     return WindowsEvent(
         event_id=event_id,
         timestamp=timestamp,
         computer=computer,
-        account_name=data.get("TargetUserName") or data.get("SubjectUserName"),
-        account_domain=data.get("TargetDomainName"),
-        source_ip=data.get("IpAddress"),
-        source_machine=data.get("WorkstationName"),
+        account_name=account_name,
+        account_domain=data.get("TargetDomainName") or data.get("AccountDomain"),
+        source_ip=data.get("IpAddress") or data.get("ClientAddress"),
+        source_machine=source_machine,
         logon_type=data.get("LogonType"),
-        failure_reason=data.get("FailureReason"),
+        failure_reason=data.get("FailureReason") or data.get("Status") or data.get("ErrorCode"),
         raw=data,
     )
 

@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lockout Forensics Report — {{ lockout.account }}</title>
+    <title>Lockout Forensics Report - {{ lockout.account }}</title>
     <style>
         body { font-family: monospace; background: #0d1117; color: #c9d1d9; padding: 40px; }
-        .container { max-width: 900px; margin: auto; }
+        .container { max-width: 940px; margin: auto; }
         h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
         .section { margin: 30px 0; }
         .section h2 { color: #8b949e; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; }
-        .verdict-ROUTINE  { background: #1a4731; color: #3fb950; padding: 15px 25px; border-radius: 6px; font-size: 24px; font-weight: bold; display: inline-block; }
+        .verdict-ROUTINE { background: #1a4731; color: #3fb950; padding: 15px 25px; border-radius: 6px; font-size: 24px; font-weight: bold; display: inline-block; }
         .verdict-SUSPICIOUS { background: #4a3000; color: #d29922; padding: 15px 25px; border-radius: 6px; font-size: 24px; font-weight: bold; display: inline-block; }
         .verdict-CRITICAL { background: #4a1a1a; color: #f85149; padding: 15px 25px; border-radius: 6px; font-size: 24px; font-weight: bold; display: inline-block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -17,10 +17,10 @@
         td { padding: 10px; border-bottom: 1px solid #21262d; font-size: 13px; }
         .bar-bg { background: #21262d; border-radius: 4px; height: 8px; width: 100%; }
         .bar-fill { background: #58a6ff; border-radius: 4px; height: 8px; }
-        .evidence-item { padding: 6px 0; font-size: 13px; }
+        .evidence-item, .rec-item { padding: 6px 0; font-size: 13px; }
         .meta { color: #8b949e; font-size: 13px; margin: 4px 0; }
         .risk-score { font-size: 36px; font-weight: bold; color: #58a6ff; }
-        .rec-item { padding: 6px 0; font-size: 13px; }
+        .summary { line-height: 1.6; color: #e6edf3; }
     </style>
 </head>
 <body>
@@ -35,6 +35,13 @@
         <p class="meta">Lockout Time: <strong>{{ lockout.lockout_time }}</strong></p>
         <p class="meta">Locked Out On: <strong>{{ lockout.lockout_computer }}</strong></p>
         <p class="meta">Source Machine(s): <strong>{{ source_machines }}</strong></p>
+    </div>
+
+    <div class="section">
+        <h2>Incident Summary</h2>
+        <p class="summary">{{ result.incident_summary }}</p>
+        <p class="meta">Urgency: <strong>{{ result.urgency }}</strong></p>
+        <p class="meta">Likely Owner: <strong>{{ result.likely_owner }}</strong></p>
     </div>
 
     <div class="section">
@@ -75,16 +82,24 @@
             {% for attempt in lockout.failed_attempts %}
             <tr>
                 <td>{{ attempt.timestamp }}</td>
-                <td>4625 — Failed Logon</td>
-                <td>{{ attempt.source_machine or "—" }}</td>
-                <td>{{ attempt.logon_type or "—" }}</td>
+                <td>4625 - Failed Logon</td>
+                <td>{{ attempt.source_machine or "-" }}</td>
+                <td>{{ attempt.logon_type or "-" }}</td>
+            </tr>
+            {% endfor %}
+            {% for event in lockout.credential_events %}
+            <tr>
+                <td>{{ event.timestamp }}</td>
+                <td>{{ event.event_id }} - Credential Validation</td>
+                <td>{{ event.source_machine or "-" }}</td>
+                <td>-</td>
             </tr>
             {% endfor %}
             <tr style="color:#f85149">
                 <td>{{ lockout.lockout_time }}</td>
-                <td>4740 — Account Locked Out</td>
+                <td>4740 - Account Locked Out</td>
                 <td>{{ lockout.lockout_computer }}</td>
-                <td>—</td>
+                <td>-</td>
             </tr>
         </table>
     </div>
@@ -92,7 +107,7 @@
     <div class="section">
         <h2>Logon Type Interpretation</h2>
         {% for lt, info in result.logon_type_interpretation.items() %}
-        <p class="meta">Type {{ lt }} — <strong>{{ info.meaning }}</strong>: {{ info.common_cause }}</p>
+        <p class="meta">Type {{ lt }} - <strong>{{ info.meaning }}</strong>: {{ info.common_cause }}</p>
         {% endfor %}
     </div>
 

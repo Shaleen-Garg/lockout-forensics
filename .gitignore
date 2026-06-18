@@ -2,7 +2,4 @@ __pycache__/
 *.pyc
 .venv/
 *.evtx
-__pycache__/
-*.pyc
-.venv/
-*.evtx
+.cache/

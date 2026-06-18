@@ -1,7 +1,10 @@
 import sys
-sys.path.insert(0, r"C:\lockout-forensics")
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from parsers.event_parser import WindowsEvent
 from datetime import datetime
+from datetime import timedelta
 from collections import defaultdict
 from dataclasses import dataclass, field
 
@@ -18,6 +21,7 @@ class LockoutEvent:
     lockout_time: datetime
     lockout_computer: str
     failed_attempts: list[WindowsEvent] = field(default_factory=list)
+    credential_events: list[WindowsEvent] = field(default_factory=list)
 
     @property
     def source_machines(self) -> set:
@@ -31,30 +35,58 @@ class LockoutEvent:
     def logon_types(self) -> set:
         return {e.logon_type for e in self.failed_attempts if e.logon_type}
 
+    @property
+    def investigation_events(self) -> list[WindowsEvent]:
+        return sorted(
+            [*self.failed_attempts, *self.credential_events],
+            key=lambda event: parse_time(event.timestamp),
+        )
+
+    @property
+    def failure_window_minutes(self) -> int:
+        if not self.failed_attempts:
+            return 0
+        first = min(parse_time(event.timestamp) for event in self.failed_attempts)
+        return max(0, round((self.lockout_time - first).total_seconds() / 60))
+
 
 def correlate(events: list[WindowsEvent]) -> list[LockoutEvent]:
     lockouts = [e for e in events if e.event_id == "4740"]
     failures = [e for e in events if e.event_id == "4625"]
+    credential_events = [e for e in events if e.event_id in {"4771", "4776"}]
 
     failures_by_account=defaultdict(list)
     for e in failures:
         if e.account_name:
-            failures_by_account[e.account_name].append(e)
+            failures_by_account[e.account_name.lower()].append(e)
+    credential_events_by_account=defaultdict(list)
+    for e in credential_events:
+        if e.account_name:
+            credential_events_by_account[e.account_name.lower()].append(e)
     results = []
 
     for lockout in lockouts:
         account = lockout.account_name
+        if not account:
+            continue
         lockout_time = parse_time(lockout.timestamp)
+        window_start = lockout_time - timedelta(minutes=30)
+        account_key = account.lower()
 
         related_failures = [
-            f for f in failures_by_account[account]
-            if parse_time(f.timestamp) <= lockout_time
+            f for f in failures_by_account[account_key]
+            if window_start <= parse_time(f.timestamp) <= lockout_time
+        ]
+        related_credentials = [
+            e for e in credential_events_by_account[account_key]
+            if window_start <= parse_time(e.timestamp) <= lockout_time
         ]
         lockout_event = LockoutEvent(
             account=account,
             lockout_time=lockout_time,
             lockout_computer=lockout.computer,
             failed_attempts=related_failures,
+            credential_events=related_credentials,
         )
         results.append(lockout_event)
     return results

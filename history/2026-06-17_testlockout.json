@@ -1,0 +1,10 @@
+{
+  "date": "2026-06-17",
+  "account": "testlockout",
+  "source_machines": [
+    "SYSWIN141"
+  ],
+  "lockout_time": "2026-06-17 05:43:51",
+  "verdict": "ROUTINE",
+  "risk_score": 2
+}

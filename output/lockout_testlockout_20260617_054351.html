@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lockout Forensics Report — testlockout</title>
+    <title>Lockout Forensics Report - testlockout</title>
     <style>
         body { font-family: monospace; background: #0d1117; color: #c9d1d9; padding: 40px; }
-        .container { max-width: 900px; margin: auto; }
+        .container { max-width: 940px; margin: auto; }
         h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
         .section { margin: 30px 0; }
         .section h2 { color: #8b949e; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; }
-        .verdict-ROUTINE  { background: #1a4731; color: #3fb950; padding: 15px 25px; border-radius: 6px; font-size: 24px; font-weight: bold; display: inline-block; }
+        .verdict-ROUTINE { background: #1a4731; color: #3fb950; padding: 15px 25px; border-radius: 6px; font-size: 24px; font-weight: bold; display: inline-block; }
         .verdict-SUSPICIOUS { background: #4a3000; color: #d29922; padding: 15px 25px; border-radius: 6px; font-size: 24px; font-weight: bold; display: inline-block; }
         .verdict-CRITICAL { background: #4a1a1a; color: #f85149; padding: 15px 25px; border-radius: 6px; font-size: 24px; font-weight: bold; display: inline-block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -17,17 +17,17 @@
         td { padding: 10px; border-bottom: 1px solid #21262d; font-size: 13px; }
         .bar-bg { background: #21262d; border-radius: 4px; height: 8px; width: 100%; }
         .bar-fill { background: #58a6ff; border-radius: 4px; height: 8px; }
-        .evidence-item { padding: 6px 0; font-size: 13px; }
+        .evidence-item, .rec-item { padding: 6px 0; font-size: 13px; }
         .meta { color: #8b949e; font-size: 13px; margin: 4px 0; }
         .risk-score { font-size: 36px; font-weight: bold; color: #58a6ff; }
-        .rec-item { padding: 6px 0; font-size: 13px; }
+        .summary { line-height: 1.6; color: #e6edf3; }
     </style>
 </head>
 <body>
 <div class="container">
 
     <h1>Lockout Forensics Report</h1>
-    <p class="meta">Generated: 2026-06-17 17:22:49</p>
+    <p class="meta">Generated: 2026-06-18 12:22:44</p>
 
     <div class="section">
         <h2>Target</h2>
@@ -35,6 +35,13 @@
         <p class="meta">Lockout Time: <strong>2026-06-17 05:43:51</strong></p>
         <p class="meta">Locked Out On: <strong>SYSWIN141</strong></p>
         <p class="meta">Source Machine(s): <strong>SYSWIN141</strong></p>
+    </div>
+
+    <div class="section">
+        <h2>Incident Summary</h2>
+        <p class="summary">testlockout was locked out on SYSWIN141 after 3 failed authentication attempt(s) over about 8 minute(s) from SYSWIN141. The strongest explanation is Stale network credentials (62% confidence). Current verdict: ROUTINE, risk 2/10.</p>
+        <p class="meta">Urgency: <strong>Routine IT remediation</strong></p>
+        <p class="meta">Likely Owner: <strong>Helpdesk or endpoint support</strong></p>
     </div>
 
     <div class="section">
@@ -72,13 +79,13 @@
     <div class="section">
         <h2>Evidence</h2>
         
-        <div class="evidence-item">✓ 3 failed attempts</div>
+        <div class="evidence-item">[OK] 3 failed attempts</div>
         
-        <div class="evidence-item">✓ 1 source machine(s): SYSWIN141</div>
+        <div class="evidence-item">[OK] 1 source machine(s): SYSWIN141</div>
         
-        <div class="evidence-item">✓ Logon Type 3 (Network)</div>
+        <div class="evidence-item">[OK] Logon Type 3 (Network)</div>
         
-        <div class="evidence-item">⚠ Lockout occurred outside business hours (05:43)</div>
+        <div class="evidence-item">[WARN] Lockout occurred outside business hours (05:43)</div>
         
     </div>
 
@@ -88,31 +95,32 @@
             <tr><th>Time</th><th>Event</th><th>Source Machine</th><th>Logon Type</th></tr>
             
             <tr>
-                <td>2026-06-17 05:35:56.068802+00:00</td>
-                <td>4625 — Failed Logon</td>
+                <td>2026-06-17T05:35:56.0688023Z</td>
+                <td>4625 - Failed Logon</td>
                 <td>SYSWIN141</td>
                 <td>3</td>
             </tr>
             
             <tr>
-                <td>2026-06-17 05:42:52.829271+00:00</td>
-                <td>4625 — Failed Logon</td>
+                <td>2026-06-17T05:42:52.8292727Z</td>
+                <td>4625 - Failed Logon</td>
                 <td>SYSWIN141</td>
                 <td>3</td>
             </tr>
             
             <tr>
-                <td>2026-06-17 05:43:51.838171+00:00</td>
-                <td>4625 — Failed Logon</td>
+                <td>2026-06-17T05:43:51.8381706Z</td>
+                <td>4625 - Failed Logon</td>
                 <td>SYSWIN141</td>
                 <td>3</td>
             </tr>
+            
             
             <tr style="color:#f85149">
                 <td>2026-06-17 05:43:51</td>
-                <td>4740 — Account Locked Out</td>
+                <td>4740 - Account Locked Out</td>
                 <td>SYSWIN141</td>
-                <td>—</td>
+                <td>-</td>
             </tr>
         </table>
     </div>
@@ -120,7 +128,7 @@
     <div class="section">
         <h2>Logon Type Interpretation</h2>
         
-        <p class="meta">Type 3 — <strong>Network</strong>: Mapped drive, file share, or net use command</p>
+        <p class="meta">Type 3 - <strong>Network</strong>: Mapped drive, file share, or net use command</p>
         
     </div>
 
